@@ -4,7 +4,7 @@ using System.Linq;
 
 public class Peg : MonoBehaviour {
 
-    [HideInInspector] public Slot mySlot;
+    /*[HideInInspector]*/ public Slot mySlot;
     [SerializeField] private GameObject removalEffect;
 
     void Awake() {

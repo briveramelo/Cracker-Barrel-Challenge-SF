@@ -12,6 +12,7 @@ public class Hand : MonoBehaviour {
     [SerializeField] private Animator handAnimator;
     private bool replace = false;
     private bool jump = true;
+    private bool correctivePause;
     private enum Handimation {
         Ready = 0,
         Holding = 1
@@ -22,7 +23,7 @@ public class Hand : MonoBehaviour {
     }
 
     void Update() {
-        transform.position = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        transform.position = (Vector2)Camera.main.ScreenToWorldPoint(Input.mousePosition);        
     }
 
 	void OnTriggerStay2D(Collider2D col) {
@@ -34,21 +35,26 @@ public class Hand : MonoBehaviour {
             }
         }
 
-        if (Input.GetButtonDown("Select")) {
-            if (!isHolding) {
-                if (col.gameObject.layer == Board.pegMask) {
-                    Peg chosenPeg = col.GetComponent<Peg>();
-                    if (chosenPeg.mySlot.IsSelectable)
-                        GrabPeg(chosenPeg);
+        if (!correctivePause) {
+            if (Input.GetButtonDown("Select")) {
+                if (!isHolding) {
+                    if (col.gameObject.layer == Board.pegMask) {
+                        Peg chosenPeg = col.GetComponent<Peg>();
+                        if (chosenPeg.mySlot.IsSelectable) {
+                            GrabPeg(chosenPeg);
+                        }
+                    }
                 }
-            }
-            else{
-                if (col.gameObject.layer == Board.slotMask) {
-                    Slot targetSlot = col.GetComponent<Slot>();
-                    if (targetSlot == heldPeg.mySlot)
-                        PlacePeg(targetSlot, replace);
-                    else if (targetSlot.IsReceivable)
-                        PlacePeg(targetSlot, jump);
+                else{
+                    if (col.gameObject.layer == Board.slotMask) {
+                        Slot targetSlot = col.GetComponent<Slot>();
+                        if (targetSlot == heldPeg.mySlot) {
+                            PlacePeg(targetSlot, replace);
+                        }
+                        else if (targetSlot.IsReceivable) {
+                            PlacePeg(targetSlot, jump);
+                        }
+                    }
                 }
             }
         }
@@ -68,9 +74,16 @@ public class Hand : MonoBehaviour {
         Highlighter.UpdateSlotsChosenStatus(chosenPeg.mySlot);
         Highlighter.HighlightSlots(HighlightType.Chosen);
         chosenPeg.GetGrabbed();
+        StartCoroutine(PauseDoubleClick());
         isHolding = true;
         handAnimator.SetInteger("AnimState", (int)Handimation.Holding);
         heldPeg = chosenPeg;
+    }
+
+    IEnumerator PauseDoubleClick() {
+        correctivePause = true;
+        yield return new WaitForEndOfFrame();
+        correctivePause = false;
     }
 
     void PlacePeg(Slot targetSlot, bool jumping) {
